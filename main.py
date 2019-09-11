@@ -1,7 +1,7 @@
 from flask import request,Flask
 from flask_cors import CORS, cross_origin
 from cluster.EM import em_business
-import os
+import os, base64, json, io
 app = Flask(__name__)
 CORS(app)
 # in powershell $env:FLASK_APP = "main"
@@ -9,15 +9,22 @@ CORS(app)
 # set FLASK_APP=main.py
 # python -m flask run
 @app.route('/')
+@cross_origin()
 def hello() :
 	return str(__name__)
-@app.route('/em', methods=['POST', 'GET'])
+@app.route('/em/predict/', methods=['POST'])
+@cross_origin()
 def em_predict() :
 	if request.method == 'POST':
-		f = dict(request.form)
-		print(f)
-		# f.save(os.path.join('./Temp/'+ f.filename))
-		return True
+		req = request.get_data().decode('utf-8')
+		ft = json.loads(req)
+		img = ft['Image']
+		img_base64 = img['value']
+		img_name = img['filename']
+		img_str = base64.b64decode(img_base64)
+		with open('./Temp/'+ img_name, 'wb') as f :
+			f.write(img_str)
+		return {'sucess': True}
 	else :
 		return False
 if __name__ == '__main__':
