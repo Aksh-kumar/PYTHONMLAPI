@@ -1,1 +1,0 @@
-['URI', 'name', 'text', 'tf_idf']
