@@ -21,11 +21,17 @@ class EM :
             for k in range(n_clusters):
                 # compute exponential term in multivariate_normal
                 delta = np.array(d) - means[k]
-                exponent_term = np.dot(delta.T, np.dot(np.linalg.pinv(covs[k]), delta))
+                inv = np.linalg.inv(np.array(covs[k], dtype=np.float64))
+                exponent_term = np.dot(delta.T, np.dot(inv, delta))
                 # Compute loglikelihood contribution for this data point and this cluster
+                # try with mnf
                 Z[k] += np.log(weights[k])
-                Z[k] -= 1/2. * (dimension * np.log(2*np.pi) + np.log(np.linalg.det(covs[k])) + exponent_term)
-                print(np.log(np.linalg.det(covs[k])))
+                det = np.linalg.det(np.array(covs[k], dtype=np.float64))
+                sm = np.sum(det + exponent_term)
+                if sm < 0 :
+                    print(det, exponent_term, sm)
+                    print(np.log(sm))
+                Z[k] -= 1/2. * (dimension * np.log(2*np.pi) + np.log(sm))
             # Increment loglikelihood contribution of this data point across all clusters
             sum_ln_exp += self._ln_sum_exp(Z)
         return sum_ln_exp
@@ -57,7 +63,7 @@ class EM :
         n_data = len(data)
         means = np.zeros((n_clusters, len(data[0])))
         for k in range(n_clusters):
-            weighted_sum = reduce(lambda x,i : x + resp[i,k]*data[i], range(n_data), 0)
+            weighted_sum = reduce(lambda x,i : x + resp[i,k]*data[i], range(n_data), 0.0)
             means[k] = weighted_sum/counts[k]
         return means
     # End
@@ -84,7 +90,7 @@ class EM :
         # dimension = len(data[0])
         n_clusters = len(means)
         # Initialize some useful variables
-        resp = np.zeros((n_data, n_clusters))
+        resp = np.zeros((n_data, n_clusters), dtype=np.float64)
         ll = self.get_log_likelihood(data, weights, means, covariances)
         ll_list = [ll]
         for it in range(maxiter):
