@@ -97,7 +97,7 @@ class EMBusiness :
     # stability we added small amount of reponsibility to not assigned cluster because for EM
     # we have to take inverse of covariance metrix if it become a singular metrix it will not 
     # get inverted
-    def get_stable_responsibilities(self, resp, k=None) :
+    def _get_stable_responsibilities(self, resp, k=None) :
         k = k if k is not None else self._k
         # Inner function
         def get_soft_assignment_list(ls, n) :
@@ -130,8 +130,7 @@ class EMBusiness :
         elif data is None and self._X is not None :
             if self.init_cluster_assignment is None :
                 raise Exception('call get_initial_centroids_and_cluster_assignment to set initial cluster assignment through k means')
-            resp = self.get_stable_responsibilities(self.init_cluster_assignment)
-            print(resp)
+            resp = self._get_stable_responsibilities(self.init_cluster_assignment)
             return self._em.em(self._X, resp, max_iter=maxiter, threshold=thresh)
         elif data is not None and self._X is None :
             return self._em.em(data, resp, max_iter=maxiter, threshold=thresh)
