@@ -21,17 +21,12 @@ class EM :
             for k in range(n_clusters):
                 # compute exponential term in multivariate_normal
                 delta = np.array(d) - means[k]
-                inv = np.linalg.inv(np.array(covs[k], dtype=np.float64))
+                inv = np.linalg.inv(covs[k])
                 exponent_term = np.dot(delta.T, np.dot(inv, delta))
                 # Compute loglikelihood contribution for this data point and this cluster
-                # try with mnf
                 Z[k] += np.log(weights[k])
-                det = np.linalg.det(np.array(covs[k], dtype=np.float64))
-                sm = np.sum(det + exponent_term)
-                if sm < 0 :
-                    print(det, exponent_term, sm)
-                    print(np.log(sm))
-                Z[k] -= 1/2. * (dimension * np.log(2*np.pi) + np.log(sm))
+                det = np.linalg.det(covs[k])
+                Z[k] -= 1/2. * (dimension * np.log(2*np.pi) + np.log(det) + exponent_term)
             # Increment loglikelihood contribution of this data point across all clusters
             sum_ln_exp += self._ln_sum_exp(Z)
         return sum_ln_exp
@@ -80,7 +75,7 @@ class EM :
         return covariances
     # End
     # EM algorithm
-    def EM_from_parameter(self, data, init_means, init_covariances, init_weights, maxiter=1000, thresh=1e-4, verbose=True):
+    def EM_from_parameter(self, data, init_means, init_covariances, init_weights, maxiter=1000, thresh=1e-4, verbose=False):
         # Make copies of initial parameters
         means = init_means[:]
         covariances = init_covariances[:]
@@ -105,10 +100,12 @@ class EM :
             covariances = self._get_covariances(data, resp, counts, means)
             ll_new = self.get_log_likelihood(data, weights, means, covariances)
             ll_list.append(ll_new)
-            if (ll_new - ll) < thresh and ll_new > -np.inf:
+            if abs(ll_new - ll) < thresh :
+                print( (ll_new - ll) < thresh)
                 break
             ll = ll_new
-        out = {'weights': weights, 'means': means, 'covariances': covariances, 'loglikelihood': ll_list, 'responsibility': resp}
+        out = {'weights': weights, 'means': means, 'covariances': covariances,
+         'loglikelihood': ll_list, 'responsibility': resp, 'Iterations': it}
         return out
     # End
     def EM_initializer_from_responsibility(self, data, resp) :

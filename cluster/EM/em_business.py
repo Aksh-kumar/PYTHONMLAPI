@@ -49,8 +49,7 @@ class EMBusiness :
             Im = imageio.imread(os.path.join(path), pilmode='RGB')
             temp = Im/255. # divide by 255 to get in fraction
             mn = temp.sum(axis=0).sum(axis=0)/(temp.shape[0]*temp.shape[1])
-            mn = mn/sum(mn) # standardized the data
-            return mn
+            return mn/np.linalg.norm(mn, ord=None)
         except :
             return None
     # End
