@@ -1,9 +1,10 @@
 import numpy as np
+# Maximum limit of number of heterogeneity required
+MAX_VAL = 1000
 def check_max_k(func) :
-    def inner(*args) :
-        max_val = 1000
-        if args[2] > max_val :
-           raise Exception("max value greater then {0} is not allowed".format(max_val))
+    def inner(*args) : 
+        if args[2] > MAX_VAL :
+           raise Exception("max value greater then {0} is not allowed".format(MAX_VAL))
         else :
             return func(*args)
     return inner

@@ -75,7 +75,7 @@ class EM :
         return covariances
     # End
     # EM algorithm
-    def EM_from_parameter(self, data, init_means, init_covariances, init_weights, maxiter=1000, thresh=1e-4, verbose=False):
+    def em_from_parameter(self, data, init_means, init_covariances, init_weights, maxiter=1000, thresh=1e-4, verbose=False):
         # Make copies of initial parameters
         means = init_means[:]
         covariances = init_covariances[:]
@@ -101,14 +101,13 @@ class EM :
             ll_new = self.get_log_likelihood(data, weights, means, covariances)
             ll_list.append(ll_new)
             if abs(ll_new - ll) < thresh :
-                print( (ll_new - ll) < thresh)
                 break
             ll = ll_new
         out = {'weights': weights, 'means': means, 'covariances': covariances,
          'loglikelihood': ll_list, 'responsibility': resp, 'Iterations': it}
         return out
     # End
-    def EM_initializer_from_responsibility(self, data, resp) :
+    def em_initializer_from_responsibility(self, data, resp) :
         counts = EM.get_soft_counts(resp)
         weights = self._get_weights(counts)
         means = self._get_means(data, resp, counts)
@@ -116,7 +115,7 @@ class EM :
         return means, covariances, weights
     # End
     def em(self, data, resp, max_iter = 1000, threshold = 1e-4) :
-        means, covariances, weights = self.EM_initializer_from_responsibility(data, resp)
-        return self.EM_from_parameter(data, means, covariances, weights, maxiter=max_iter, thresh=threshold)
+        means, covariances, weights = self.em_initializer_from_responsibility(data, resp)
+        return self.em_from_parameter(data, means, covariances, weights, maxiter=max_iter, thresh=threshold)
 # End class
 

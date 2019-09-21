@@ -6,12 +6,14 @@ import os
 import pandas as pd
 import numpy as np
 from K_mean import K_Mean
-from EM_Main import EM
+from EM import EM
+
 class EMBusiness :
     def __init__(self, path=None) :
         self._dataset = None
         self._X = None
         self._k = None
+        self._em_params = None
         self.init_centroids = None
         self.init_cluster_assignment = None
         self.df = pd.DataFrame([],columns=['Image_Name', 'Path', 'Extension', 'R', 'G', 'B' ])
@@ -22,6 +24,12 @@ class EMBusiness :
             self._dataset = self.get_dataset_from_path(path)
             self.get_RGB_numpy_array()
     # End
+    @property
+    def em_parameters(self) :
+        if self._em_params is None :
+            raise Exception('Em parameter not found please run em_params method to get the parameters')
+        else :
+            return self._em_params.copy()
     @property
     def IMAGE_EXT_SUPPORTED(self) :
         return self.image_EXT
@@ -124,28 +132,44 @@ class EMBusiness :
     # End
     # parameter data numpy array, responsibility numpy list of responsibility, maxiteer maximum iteration of
     # EM algorithm threshold - stopping threshold value if value not change further this
-    def em_params(self, data=None, resp=None, maxiter = 1000, thresh=1e-4) :
+    def get_em_params(self, data=None, resp=None, maxiter = 1000, thresh=1e-4, seed = None) :
         if data is None and self._X is None :
             raise Exception('No data found')
         elif data is None and self._X is not None :
-            if self.init_cluster_assignment is None :
-                raise Exception('call get_initial_centroids_and_cluster_assignment to set initial cluster assignment through k means')
+            # set initial centroids and assignments and hard assignments to clusters by k-means
+            self.get_initial_centroids_and_cluster_assignment(seed=seed)
             resp = self._get_stable_responsibilities(self.init_cluster_assignment)
-            return self._em.em(self._X, resp, max_iter=maxiter, threshold=thresh)
-        elif data is not None and self._X is None :
+            self._em_params = self._em.em(self._X, resp, max_iter=maxiter, threshold=thresh)
+            return self.em_parameters
+        elif data is not None and resp is not None and self._X is None :
             return self._em.em(data, resp, max_iter=maxiter, threshold=thresh)
         else :
             return None
     # End
+    def predict_soft_assignments(self, data, means=None, covariance=None, weight=None) :
+        if means is None and covariance is None and weight is None :
+            if self._X is None :
+                raise Exception('can\'t find the data please provide training data')
+            if self._k is None :
+                raise Exception('can\'t find the value of k')
+            if self._em_params is None :
+                raise Exception('EM parameter is not being set')
+            if not (data.shape[1] == self._X.shape[1]) :
+                raise Exception('dimention of data mismatch')
+            return self._em.get_responsibilities(data, self._em_params['weights'],
+                                                 self._em_params['means'],
+                                                 self._em_params['covariances'])
+        if means is not None and covariance is not None and weight is not None : 
+            n_cluster = means.shape[0]
+            dimension = means.shape[1]
+            if weight.ndim == 1 and weight.shape[0] == n_cluster and \
+                covariance.ndim == 3 and covariance.shape[0] == n_cluster and \
+                covariance.shape[1] == dimension and covariance.shape[2] == dimension :
+                return self._em.get_responsibilities(data, weight, means, covariance)
+            else :
+                raise Exception('Dimension of paramenter do not match')
+        else :
+            raise Exception('some parameter is missing')
+    # End
 # End class
 
-if __name__ == '__main__' :
-    path = r'.\images'
-    emb = EMBusiness(path)
-    #res = emb.get_first_n_heterogeneity(55)
-    emb.k = 3
-    c, cl = emb.get_initial_centroids_and_cluster_assignment(seed = 0)
-    #print(c)
-    #print(cl)
-    res = emb.em_params()
-    print(res)
