@@ -14,6 +14,7 @@ class EMBusiness :
         self._X = None
         self._k = None
         self._em_params = None
+        self._dic_k_to_name = {}
         self.init_centroids = None
         self.init_cluster_assignment = None
         self.df = pd.DataFrame([],columns=['Image_Name', 'Path', 'Extension', 'R', 'G', 'B' ])
@@ -30,9 +31,22 @@ class EMBusiness :
             raise Exception('Em parameter not found please run em_params method to get the parameters')
         else :
             return self._em_params.copy()
+    # End
     @property
     def IMAGE_EXT_SUPPORTED(self) :
         return self.image_EXT
+    # End
+    @property
+    def cluster_name(self) :
+        return self._dic_k_to_name
+    # End
+    @cluster_name.setter
+    def cluster_name(self, value) :
+        if not (len(value.keys()) == self._k) :
+            raise Exception('length must be the same as number of clusters')
+        else :
+            self._dic_k_to_name = value
+    # End
     @property
     def dataset(self) :
         return self._dataset.copy() if self._dataset is not None else None
@@ -45,6 +59,7 @@ class EMBusiness :
     @property
     def k(self) :
         return self._k
+    # End
     @k.setter
     def k(self, value) :
         try :
@@ -52,6 +67,18 @@ class EMBusiness :
         except :
             raise Exception('value must be Integer')
     # End
+    def get_hard_assignment(self, resp=None, k=None, one_hot_encoded = False):
+        if resp is not None and k is not None :
+            assert resp.shape[1] == k
+            res = list(map(lambda  x : int(np.where(x==np.max(x))[0]), resp))
+            return np.array(res) if not one_hot_encoded else np.eye(k, dtype='int')[res]
+        if resp is None and k is None :
+            if self._em_params is None or self._k is None :
+                raise Exception('Either of em_parameters or k (number of cluster) not found')
+            res = list(map(lambda  x : int(np.where(x==np.max(x))[0]), self._em_params['responsibility']))
+            return np.array(res) if not one_hot_encoded else np.eye(self._k, dtype='int')[res]
+        raise Exception('some parameter not been found')
+    # End   
     def _get_image_feature(self, path) :
         try :
             Im = imageio.imread(os.path.join(path), pilmode='RGB')
@@ -80,13 +107,18 @@ class EMBusiness :
                 dataset = self._create_image_dataset(f_path , dataset)
         return dataset
     # End
+    # get RGB vector of image using imageio
     def get_RGB_numpy_array(self, dataset=None) :
         X = dataset.iloc[:, [3, 4, 5]].values if dataset is not None else self._dataset.iloc[:, [3, 4, 5]].values
         if dataset is None :
             self._X = X[:, :]    
         return X
     # End
+    # take path of directory in which training images are stored and
+    # return pandas dataframe of features 
     def get_dataset_from_path(self, path, num_rows = None, in_dic_list = False) :
+        if not os.path.isdir(os.path.join(path)) :
+            raise Exception('please provide directory path of training images')
         self._dataset = self._create_image_dataset(path)
         if in_dic_list :
             return self.dataset.T.to_dict().values() if num_rows is None else self.dataset.head(num_rows).T.to_dict().values()
@@ -146,6 +178,8 @@ class EMBusiness :
         else :
             return None
     # End
+    # predict the soft assignment of given data if means, covariance and weight 
+    # is not given then internal saved em output evaluated from dataset is used
     def predict_soft_assignments(self, data, means=None, covariance=None, weight=None) :
         if means is None and covariance is None and weight is None :
             if self._X is None :
