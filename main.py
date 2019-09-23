@@ -2,7 +2,7 @@ from flask import request,Flask
 from flask_cors import CORS, cross_origin
 from cluster.EM import em_business
 import os, json, io
-
+import Lib.supporting_module.pickle_module as spr
 app = Flask(__name__)
 CORS(app)
 # in powershell $env:FLASK_APP = "main"
@@ -23,10 +23,10 @@ def em_predict() :
 		img_base64 = img['value']
 		img_name = img['filename']
 		path = './Temp/'+ img_name
-		
-		return {'sucess': True}
+		res = spr.decode_base64(img_base64, path)
+		return {'sucess': res}
 	else :
-		return False
+		return {'sucess': False}
 if __name__ == '__main__':
 	app.run(debug=True)
 else:

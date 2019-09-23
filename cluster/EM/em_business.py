@@ -2,12 +2,30 @@
 # coding: utf-8
 
 import imageio
-import os
+import os,re, base64, sys
 import pandas as pd
 import numpy as np
-from K_mean import K_Mean
 from EM import EM
+import pickle as pk
+import importlib.util
+km_path = importlib.util.spec_from_file_location("K_mean", os.path.join("../KM/K_mean.py"))
+KM = importlib.util.module_from_spec(km_path)
+km_path.loader.exec_module(KM)
+pkl_path = importlib.util.spec_from_file_location("pickle_module", os.path.join("../../Lib/supporting_module/pickle_module.py"))
+pkl = importlib.util.module_from_spec(pkl_path)
+pkl_path.loader.exec_module(pkl)
+sys.modules['K_mean'] = KM
+sys.modules['pickle_module'] = pkl
+#from Lib.supporting_module import pickle_module as pkl
 
+# constant used in this module
+SEED = 0 # seed used to initiate centroids in k-mean algorithm
+TRAINING_PATH_DIR = r'.\images' # training images directory path
+EM_PICKLES_SAVE_SUB_DIR = r'\Pickle_EM' # saved sub directory of pickle file
+MODEL_DIR = r'..\..\Saved_Model' # directory path in which model pickled file is saved
+
+""" EM business lgic class run EM algorithm from scratch using k-mean as initializer
+ expected parameter training images path"""
 class EMBusiness :
     def __init__(self, path=None) :
         self._dataset = None
@@ -19,7 +37,7 @@ class EMBusiness :
         self.init_cluster_assignment = None
         self.df = pd.DataFrame([],columns=['Image_Name', 'Path', 'Extension', 'R', 'G', 'B' ])
         self.image_EXT = ['.png', '.jpeg', '.jpg', '.jif', '.jpe']
-        self._km = K_Mean()
+        self._km = KM.K_Mean()
         self._em = EM()
         if path is not None :
             self._dataset = self.get_dataset_from_path(path)
@@ -107,15 +125,15 @@ class EMBusiness :
                 dataset = self._create_image_dataset(f_path , dataset)
         return dataset
     # End
-    # get RGB vector of image using imageio
+    """ get RGB vector of image using imageio"""
     def get_RGB_numpy_array(self, dataset=None) :
         X = dataset.iloc[:, [3, 4, 5]].values if dataset is not None else self._dataset.iloc[:, [3, 4, 5]].values
         if dataset is None :
             self._X = X[:, :]    
         return X
     # End
-    # take path of directory in which training images are stored and
-    # return pandas dataframe of features 
+    """ take path of directory in which training images are stored and
+     return pandas dataframe of features """
     def get_dataset_from_path(self, path, num_rows = None, in_dic_list = False) :
         if not os.path.isdir(os.path.join(path)) :
             raise Exception('please provide directory path of training images')
@@ -125,7 +143,7 @@ class EMBusiness :
         else :
             return self.dataset if num_rows is None else self.dataset.head(num_rows)
     # End
-    # parameter n is number of clusters with there associate heterogeneity and data is numpy array
+    """ parameter n is number of clusters with there associate heterogeneity and data is numpy array"""
     def get_first_n_heterogeneity(self, n, data=None) :
         data = data if data is not None else self._dataset
         if data is None :
@@ -133,10 +151,10 @@ class EMBusiness :
         X = self._X if data is None else data
         return self._km.get_initial_k(X, n)
     # End
-    # since cluster assignment produces hard assignment through k mean this fur computational
-    # stability we added small amount of reponsibility to not assigned cluster because for EM
-    # we have to take inverse of covariance metrix if it become a singular metrix it will not 
-    # get inverted
+    """ since cluster assignment produces hard assignment through k mean this fur computational
+     stability we added small amount of reponsibility to not assigned cluster because for EM
+     we have to take inverse of covariance metrix if it become a singular metrix it will not 
+     get inverted"""
     def _get_stable_responsibilities(self, resp, k=None) :
         k = k if k is not None else self._k
         # Inner function
@@ -147,8 +165,8 @@ class EMBusiness :
             return np.insert(temp, index_1, 1-sum_ele)
         return np.array(list(map(lambda y : get_soft_assignment_list(y, k-1), resp)))
     # End
-    # expected parameter k- number of cluster and data is numpy array of feature is optional if
-    # not given then the dataset created through this object  RBG value is getting fetched
+    """ expected parameter k- number of cluster and data is numpy array of feature is optional if
+     not given then the dataset created through this object  RBG value is getting fetched"""
     def get_initial_centroids_and_cluster_assignment(self, k=None, data=None, seed = None) :
         data_temp = data if data is not None else self._X
         k = k if k is not None else self._k
@@ -162,8 +180,8 @@ class EMBusiness :
             self.init_cluster_assignment = np.eye(k)[cluster_assignments]
         return centroids, np.eye(k)[cluster_assignments]
     # End
-    # parameter data numpy array, responsibility numpy list of responsibility, maxiteer maximum iteration of
-    # EM algorithm threshold - stopping threshold value if value not change further this
+    """ parameter data numpy array, responsibility numpy list of responsibility, maxiteer maximum iteration of
+     EM algorithm threshold - stopping threshold value if value not change further this"""
     def get_em_params(self, data=None, resp=None, maxiter = 1000, thresh=1e-4, seed = None) :
         if data is None and self._X is None :
             raise Exception('No data found')
@@ -178,8 +196,8 @@ class EMBusiness :
         else :
             return None
     # End
-    # predict the soft assignment of given data if means, covariance and weight 
-    # is not given then internal saved em output evaluated from dataset is used
+    """ predict the soft assignment of given data if means, covariance and weight 
+     is not given then internal saved em output evaluated from dataset is used"""
     def predict_soft_assignments(self, data, means=None, covariance=None, weight=None) :
         if means is None and covariance is None and weight is None :
             if self._X is None :
@@ -205,5 +223,59 @@ class EMBusiness :
         else :
             raise Exception('some parameter is missing')
     # End
+    def get_first_n_data_responsibility(self, n, emobj = None, to_dict=False) :
+        emobj = emobj if emobj is not None else self
+        df = emobj.dataset
+        len_dataframe = len(df.index)
+        if n > len_dataframe :
+            raise Exception('required number of data is larger than available size of dataset')
+        else :
+            result = {}
+            resp = pd.DataFrame(emobj.em_parameters['responsibility'], columns= list(range(emobj.k)))
+            hard_assign = pd.DataFrame(emobj.get_hard_assignment(), columns = ['Assign_Cluster'])
+            df = pd.concat([df, resp, hard_assign], axis=1)
+            for i in range(emobj.k) :
+                temp = df[df['Assign_Cluster'] == i].head(n)
+                base64_list = []
+                for index, row in temp.iterrows() :
+                    encd_64 = pkl.encode_base64(row['Path'])
+                    base64_list.append(encd_64)
+                temp['Image_base64'] = base64_list
+                result[i] = temp if not to_dict else temp.T.to_dict().values()
+            return result
+    # End
 # End class
 
+def get_em_object(k) :
+    # replace pickle file name non alphabatical character to _
+    f_name = re.sub('[^0-9a-zA-Z]+', '_', TRAINING_PATH_DIR) +'_' + str(k) + '.pickle'
+    pkl_obj = pkl.read_pickled_object(EM_PICKLES_SAVE_SUB_DIR, f_name)
+    print(pkl_obj)
+    if pkl_obj is None :
+        em_obj = EMBusiness(TRAINING_PATH_DIR)
+        em_obj.k = k
+        em_obj.get_em_params(seed=SEED)
+        pkl_obj = pkl.GetPickledObject.get_EM_pickled(TRAINING_PATH_DIR, em_obj, k)
+        pkl.write_pickled_object(pkl_obj, EM_PICKLES_SAVE_SUB_DIR, f_name)
+    return pkl_obj
+# End
+
+if __name__ == '__main__' :
+    k=3
+    #res = emb.get_first_n_heterogeneity(55)
+    pkl_obj = get_em_object(k)
+    print(pkl_obj)
+    if pkl_obj is None :
+        raise Exception('no pickle object found')
+    em_obj = pkl_obj.pickled_object
+    data = em_obj._X[-2:]
+    data = data if data.ndim == 2 else np.array([data]) if data.ndim == 1 else None 
+    if data is not None :
+        #res2 = em_obj.predict_soft_assignments(data, res['means'] ,res['covariances'], res['weights'])
+        res2 = em_obj.predict_soft_assignments(data)
+        print(res2)
+        print('original')
+        print(em_obj.em_parameters['responsibility'][-2:])
+        res = em_obj.get_first_n_data_responsibility(5, em_obj)[0]
+        for index, row in res.iterrows() :
+            print(row['Image_Name'])

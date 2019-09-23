@@ -1,6 +1,7 @@
 import numpy as np
 # Maximum limit of number of heterogeneity required
 MAX_VAL = 1000
+# decorator
 def check_max_k(func) :
     def inner(*args) : 
         if args[2] > MAX_VAL :
