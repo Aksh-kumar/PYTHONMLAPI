@@ -237,8 +237,8 @@ class EMBusiness :
             for i in range(emobj.k) :
                 temp = df[df['Assign_Cluster'] == i].head(n)
                 base64_list = []
-                for index, row in temp.iterrows() :
-                    encd_64 = pkl.encode_base64(row['Path'])
+                for row in temp.iterrows() :
+                    encd_64 = pkl.encode_base64(row[1]['Path'])
                     base64_list.append(encd_64)
                 temp['Image_base64'] = base64_list
                 result[i] = temp if not to_dict else temp.T.to_dict().values()
@@ -250,7 +250,6 @@ def get_em_object(k) :
     # replace pickle file name non alphabatical character to _
     f_name = re.sub('[^0-9a-zA-Z]+', '_', TRAINING_PATH_DIR) +'_' + str(k) + '.pickle'
     pkl_obj = pkl.read_pickled_object(EM_PICKLES_SAVE_SUB_DIR, f_name)
-    print(pkl_obj)
     if pkl_obj is None :
         em_obj = EMBusiness(TRAINING_PATH_DIR)
         em_obj.k = k
@@ -264,7 +263,6 @@ if __name__ == '__main__' :
     k=3
     #res = emb.get_first_n_heterogeneity(55)
     pkl_obj = get_em_object(k)
-    print(pkl_obj)
     if pkl_obj is None :
         raise Exception('no pickle object found')
     em_obj = pkl_obj.pickled_object
@@ -272,10 +270,10 @@ if __name__ == '__main__' :
     data = data if data.ndim == 2 else np.array([data]) if data.ndim == 1 else None 
     if data is not None :
         #res2 = em_obj.predict_soft_assignments(data, res['means'] ,res['covariances'], res['weights'])
-        res2 = em_obj.predict_soft_assignments(data)
-        print(res2)
-        print('original')
-        print(em_obj.em_parameters['responsibility'][-2:])
+        #res2 = em_obj.predict_soft_assignments(data)
+        #print(res2)
+        #print('original')
+        #print(em_obj.em_parameters['responsibility'][-2:])
         res = em_obj.get_first_n_data_responsibility(5, em_obj)[0]
         for index, row in res.iterrows() :
             print(row['Image_Name'])
