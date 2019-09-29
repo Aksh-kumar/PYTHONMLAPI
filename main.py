@@ -1,8 +1,8 @@
 from flask import request,Flask
 from flask_cors import CORS, cross_origin
-from cluster.EM import em_business
 import os, json, io
-import Lib.supporting_module.pickle_module as spr
+from ML_algorithms.cluster.EM import em_business as emb
+from ML_algorithms.supporting_module import pickle_module as spr
 app = Flask(__name__)
 CORS(app)
 # in powershell $env:FLASK_APP = "main"
