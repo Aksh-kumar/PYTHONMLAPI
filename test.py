@@ -4,7 +4,6 @@ TRAINING_PATH_DIR_EM = os.path.join(os.getcwd(), r'\Data\EM\images')
 if __name__ == '__main__' :
     k=3
     #res = emb.get_first_n_heterogeneity(55)
-    print(os.getcwd())
     pkl_obj = emb.get_em_object(k, TRAINING_PATH_DIR_EM)
     if pkl_obj is None :
         raise Exception('no pickle object found')

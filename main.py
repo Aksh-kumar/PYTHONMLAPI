@@ -3,6 +3,10 @@ from flask_cors import CORS, cross_origin
 import os, json, io
 from ML_algorithms.cluster.EM import em_business as emb
 from ML_algorithms.supporting_module import pickle_module as spr
+# INIT Important class
+TRAINING_PATH_DIR_EM = os.path.join(os.getcwd(), r'\Data\EM\images')
+CURRENT_DIR = os.getcwd()
+TEMP_FILE_PATH = os.path.join(CURRENT_DIR, r'/Temp')
 app = Flask(__name__)
 CORS(app)
 # in powershell $env:FLASK_APP = "main"
@@ -16,17 +20,19 @@ def hello() :
 @app.route('/em/predict/', methods=['POST'])
 @cross_origin()
 def em_predict() :
+	res = False
 	if request.method == 'POST':
-		req = request.get_data().decode('utf-8')
-		ft = json.loads(req)
-		img = ft['Image']
-		img_base64 = img['value']
-		img_name = img['filename']
-		path = './Temp/'+ img_name
-		res = spr.decode_base64(img_base64, path)
-		return {'sucess': res}
-	else :
-		return {'sucess': False}
+		try :
+			req = request.get_data().decode('utf-8')
+			ft = json.loads(req)
+			img = ft['Image']
+			img_base64 = img['value']
+			img_name = img['filename']
+			path = os.path.join(TEMP_FILE_PATH, img_name)
+			res = spr.decode_base64(img_base64, path)
+		except :
+			pass
+	return {'sucess': res}
 if __name__ == '__main__':
 	app.run(debug=True)
 else:
