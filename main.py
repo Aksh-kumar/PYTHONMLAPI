@@ -6,7 +6,7 @@ from ML_algorithms.supporting_module import pickle_module as spr
 # INIT Important class
 TRAINING_PATH_DIR_EM = os.path.join(os.getcwd(), r'\Data\EM\images')
 CURRENT_DIR = os.getcwd()
-TEMP_FILE_PATH = os.path.join(CURRENT_DIR, r'/Temp')
+TEMP_FILE_PATH = os.path.join(CURRENT_DIR, r'Temp')
 app = Flask(__name__)
 CORS(app)
 # in powershell $env:FLASK_APP = "main"
@@ -24,8 +24,8 @@ def em_predict() :
 	if request.method == 'POST':
 		try :
 			req = request.get_data().decode('utf-8')
-			ft = json.loads(req)
-			img = ft['Image']
+			img = json.loads(req)
+			#img = ft['Image']
 			img_base64 = img['value']
 			img_name = img['filename']
 			path = os.path.join(TEMP_FILE_PATH, img_name)
