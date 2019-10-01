@@ -1,15 +1,5 @@
 import numpy as np
-# Maximum limit of number of heterogeneity required
-MAX_VAL = 1000
-# decorator
-def check_max_k(func) :
-    def inner(*args) : 
-        if args[2] > MAX_VAL :
-           raise Exception("max value greater then {0} is not allowed".format(MAX_VAL))
-        else :
-            return func(*args)
-    return inner
-# End
+
 class K_Mean :
     def __init__(self) :
         pass
@@ -75,12 +65,13 @@ class K_Mean :
             prev_cluster_assignment = cluster_assignment[:]
         return centroids, cluster_assignment
     # End
-    @check_max_k
-    def get_initial_k(self, X, max_k=15, in_dict=True) :
+    def get_initial_k(self, X, n, in_dict=True, seed=None) :
+        if n > len(X) :
+            raise Exception('n value is too large')
         heterogeneity = []
         k_list = []
-        for k in range(1,max_k+1) :
-            init_cent = self._k_meanpp_initialize(X, k, seed=0)
+        for k in range(1,n+1) :
+            init_cent = self._k_meanpp_initialize(X, k, seed=seed)
             centroids, cluster_assignment =  self.kmeans(X, k, init_cent)
             heterogeneity.append(self.get_heterogeneity(X, k, centroids, cluster_assignment))
             k_list.append(k)

@@ -60,12 +60,13 @@ def encode_base64(path) :
 # End
 """ decode file from base 64 encoding
 imput parameter is base64 string and file path"""
-def decode_base64(base64, path) :
+def decode_base64(val_base64, path) :
     try :
-        img_str = base64.b64decode(base64)
+        img_str = base64.b64decode(val_base64)
         with open(os.path.join(path), 'wb') as f :
             f.write(img_str)
         return path
-    except :
+    except Exception as e:
+        print(str(e))
         return None
 # End

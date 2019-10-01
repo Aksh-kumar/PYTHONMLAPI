@@ -37,6 +37,7 @@ class EMBusiness :
         self.init_cluster_assignment = None
         self._col_list = ['Image_Name', 'Path', 'Extension', 'R', 'G', 'B' ]
         self.base64_col_name = 'Image_base64'
+        self._assign_cluster_col_name = 'Assign_Cluster'
         self.df = pd.DataFrame([],columns=self._col_list)
         self.image_EXT = ['.png', '.jpeg', '.jpg', '.jif', '.jpe']
         self._km = KM.K_Mean()
@@ -87,9 +88,9 @@ class EMBusiness :
         except :
             raise Exception('value must be Integer')
     # End
-    def _get_base_dataset(self, ext, filename, f_path, R, G, B) :
-        dic = dict(zip(self._col_list, [filename, f_path, ext, R, G, B]))
-        return pd.DataFrame(dic, columns = self._col_list)
+    def _get_base_dataset(self, filename, f_path, ext, R, G, B) :
+        dic = dict(zip(self._col_list, [[filename], [f_path], [ext], [R], [G], [B]]))
+        return pd.DataFrame(dic)
     # End
     def _shuffle_column(self, df) :
         init_col = df.columns.tolist()
@@ -109,13 +110,13 @@ class EMBusiness :
             assert resp.shape[1] == k
             res = list(map(lambda  x : int(np.where(x==np.max(x))[0]), resp))
             result = np.array(res) if not one_hot_encoded else np.eye(k, dtype='int')[res]
-            return pd.DataFrame(result, columns = ['Assign_Cluster']) if to_pandas_DF else result
+            return pd.DataFrame(result, columns = [self._assign_cluster_col_name]) if to_pandas_DF else result
         if resp is None and k is None :
             if self._em_params is None or self._k is None :
                 raise Exception('Either of em_parameters or k (number of cluster) not found')
             res = list(map(lambda  x : int(np.where(x==np.max(x))[0]), self._em_params['responsibility']))
             result = np.array(res) if not one_hot_encoded else np.eye(self._k, dtype='int')[res]
-            return pd.DataFrame(result, columns = ['Assign_Cluster']) if to_pandas_DF else result
+            return pd.DataFrame(result, columns = [self._assign_cluster_col_name]) if to_pandas_DF else result
         raise Exception('some parameter not been found')
     # End   
     def _get_image_feature(self, path) :
@@ -155,22 +156,18 @@ class EMBusiness :
     # End
     """ take path of directory in which training images are stored and
      return pandas dataframe of features """
-    def get_dataset_from_path(self, path, num_rows = None, in_dic_list = False) :
+    def get_dataset_from_path(self, path, num_rows = None) :
         if not os.path.isdir(os.path.join(path)) :
             raise Exception('please provide directory path of training images')
         self._dataset = self._create_image_dataset(path)
-        if in_dic_list :
-            return self.dataset.T.to_dict().values() if num_rows is None else self.dataset.head(num_rows).T.to_dict().values()
-        else :
-            return self.dataset if num_rows is None else self.dataset.head(num_rows)
+        return self.dataset if num_rows is None else self.dataset.head(num_rows)
     # End
     """ parameter n is number of clusters with there associate heterogeneity and data is numpy array"""
-    def get_first_n_heterogeneity(self, n, data=None) :
-        data = data if data is not None else self._dataset
-        if data is None :
-            raise Exception('No data found')
+    def get_first_n_heterogeneity(self, n, data=None, seed = None) :
         X = self._X if data is None else data
-        return self._km.get_initial_k(X, n)
+        if X is None :
+            raise Exception('No data found')
+        return self._km.get_initial_k(X, n=n, seed=seed)
     # End
     """ since cluster assignment produces hard assignment through k mean this fur computational
      stability we added small amount of reponsibility to not assigned cluster because for EM
@@ -244,10 +241,9 @@ class EMBusiness :
         else :
             raise Exception('some parameter is missing')
     # End
-    def get_first_n_data_responsibility(self, n, emobj = None, to_dict=False) :
-        emobj = emobj if emobj is not None else self
+    def get_first_n_data_responsibility(self, n, to_json=False) :
+        emobj = self
         df = emobj.dataset
-        df = df.drop(['Path'], axis=1)
         len_dataframe = len(df.index)
         if n > len_dataframe :
             raise Exception('required number of data is larger than available size of dataset')
@@ -257,28 +253,30 @@ class EMBusiness :
             hard_assign = emobj.get_hard_assignment(to_pandas_DF=True)
             df = pd.concat([df, resp, hard_assign], axis=1)
             for i in range(emobj.k) :
-                temp = df[df['Assign_Cluster'] == i].head(n)
+                temp = df[df[self._assign_cluster_col_name] == i].head(n)
                 base64_list = []
                 for row in temp.iterrows() :
                     encd_64 = pkl.encode_base64(row[1]['Path'])
                     base64_list.append(encd_64)
                 temp[self.base64_col_name] = base64_list
                 temp = self._shuffle_column(temp)
-                result[i] = temp if not to_dict else temp.T.to_dict().values()
+                temp = temp.drop(['Path'], axis=1)
+                result[i] = temp.to_json(orient='records') if to_json else temp
             return result
     # End
     def predict_data(self, filename, filetype, filepath, val_base64, means=None, covariance=None, weight=None) :
         ext = '.' + filetype.split('/')[1]
         temp = self._get_image_feature(filepath)
         R, G, B = temp[0], temp[1], temp[2]
-        resp = self.predict_soft_assignments([temp], means=None, covariance=None, weight=None)
+        resp = self.predict_soft_assignments(np.array([temp]), means=None, covariance=None, weight=None)
         hard_assign = self.get_hard_assignment(resp, self._k, to_pandas_DF=True)
-        hard_assign = hard_assign.loc[:, (hard_assign != 0).any(axis=0)]
+        # hard_assign = hard_assign.loc[:, (hard_assign != 0).any(axis=0)]
         resp = pd.DataFrame(resp, columns= list(range(self.k)))
         df = self._get_base_dataset(filename, filepath, ext, R, G, B)
         df[self.base64_col_name] = val_base64
         df = pd.concat([df, resp, hard_assign], axis=1)
         df = self._shuffle_column(df)
+        df = df.drop(['Path'], axis=1)
         return df
 # End class
 
@@ -287,8 +285,10 @@ class EMBusiness :
 get_file_name = lambda k, pth : re.sub('[^0-9a-zA-Z]+', '_', pth) +'_' + str(k) + '.pickle'
 
 # write E pickle
-def write_em_pickle(k, seed, TRAINING_PATH_DIR, f_name=None) :
-    f_name = f_name if f_name is not None else get_file_name(k)
+# parameter k-number of cluster, training path directory path, seed seed to initialize cluster parameter
+# and f_name file name to save as pickle
+def write_em_pickle(k, TRAINING_PATH_DIR, seed, f_name=None) :
+    f_name = f_name if f_name is not None else get_file_name(k, TRAINING_PATH_DIR)
     em_obj = EMBusiness(TRAINING_PATH_DIR)
     em_obj.k = k
     em_obj.get_em_params(seed=seed)
@@ -298,10 +298,10 @@ def write_em_pickle(k, seed, TRAINING_PATH_DIR, f_name=None) :
 # End
 
 # get EM object
-def get_em_object(k, TRAINING_PATH_DIR, SEED = 0) :
+def get_em_object(k, TRAINING_PATH_DIR, seed = None) :
     f_name = get_file_name(k, TRAINING_PATH_DIR)
     pkl_obj = pkl.read_pickled_object(EM_PICKLES_SAVE_SUB_DIR, f_name)
     if pkl_obj is None :
-        pkl_obj = write_em_pickle(k, TRAINING_PATH_DIR, SEED, f_name)
+        pkl_obj = write_em_pickle(k, TRAINING_PATH_DIR, seed, f_name)
     return pkl_obj
 # End
