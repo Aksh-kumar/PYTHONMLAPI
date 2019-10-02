@@ -198,19 +198,20 @@ class EMBusiness :
             self.init_cluster_assignment = np.eye(k)[cluster_assignments]
         return centroids, np.eye(k)[cluster_assignments]
     # End
-    """ parameter data numpy array, responsibility numpy list of responsibility, maxiteer maximum iteration of
+    """ parameter data numpy array, maxiteer maximum iteration of
      EM algorithm threshold - stopping threshold value if value not change further this"""
-    def get_em_params(self, data=None, resp=None, maxiter = 1000, thresh=1e-4, seed = None) :
+    def get_em_params(self, data=None, maxiter = 1000, thresh=1e-4, seed = None) :
         if data is None and self._X is None :
             raise Exception('No data found')
         elif data is None and self._X is not None :
             # set initial centroids and assignments and hard assignments to clusters by k-means
             self.get_initial_centroids_and_cluster_assignment(seed=seed)
-            resp = self._get_stable_responsibilities(self.init_cluster_assignment)
-            self._em_params = self._em.em(self._X, resp, max_iter=maxiter, threshold=thresh)
+            # resp = self._get_stable_responsibilities(self.init_cluster_assignment)
+            self._em_params = self._em.em(self._X, self.init_centroids , max_iter=maxiter, threshold=thresh)
             return self.em_parameters
-        elif data is not None and resp is not None and self._X is None :
-            return self._em.em(data, resp, max_iter=maxiter, threshold=thresh)
+        elif data is not None and self._X is None :
+            centroids, cluster_assignments = self.get_initial_centroids_and_cluster_assignment(data = data,seed=seed)
+            return self._em.em(data, centroids, max_iter=maxiter, threshold=thresh)
         else :
             return None
     # End

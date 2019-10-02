@@ -107,15 +107,20 @@ class EM :
          'loglikelihood': ll_list, 'responsibility': resp, 'Iterations': it}
         return out
     # End
-    def em_initializer_from_responsibility(self, data, resp) :
-        counts = EM.get_soft_counts(resp)
-        weights = self._get_weights(counts)
-        means = self._get_means(data, resp, counts)
-        covariances = self._get_covariances(data, resp, counts, means)
+    def _em_initializer_from_responsibility(self, data, init_centroids) :
+        #counts = EM.get_soft_counts(resp)
+        #weights = self._get_weights(counts)
+        #means = self._get_means(data, resp, counts)
+        #covariances = self._get_covariances(data, resp, counts, means)
+        means = init_centroids
+        n_cluster = len(init_centroids)
+        cov = np.diag(np.var(data, axis=0))
+        covariences = np.array([cov]*n_cluster)
+        weights = np.array([1/n_cluster]*n_cluster)
         return means, covariances, weights
     # End
-    def em(self, data, resp, max_iter = 1000, threshold = 1e-4) :
-        means, covariances, weights = self.em_initializer_from_responsibility(data, resp)
+    def em(self, data, init_centroids, max_iter = 1000, threshold = 1e-4) :
+        means, covariances, weights = self._em_initializer_from_responsibility(data, init_centroids)
         return self.em_from_parameter(data, means, covariances, weights, maxiter=max_iter, thresh=threshold)
 # End class
 

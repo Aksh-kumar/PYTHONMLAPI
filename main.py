@@ -1,4 +1,4 @@
-from flask import request,Flask
+from flask import request,Flask, jsonify
 from flask_cors import CORS, cross_origin
 import os, json, io, ast
 from ML_algorithms.cluster.EM import em_business as emb
@@ -106,9 +106,12 @@ def getclusterparameter() :
 @app.route('/em/getsupportedimagesextension/', methods=['GET'])
 @cross_origin()
 def getsupportedimagesextension() :
-	k = request.args.get('k', type = int)
-	emobj = get_model(k)
-	return json.loads(json.dumps(emobj.IMAGE_EXT_SUPPORTED))
+	try :
+		k = request.args.get('k', type = int)
+		emobj = get_model(k)
+		return jsonify(emobj.IMAGE_EXT_SUPPORTED)
+	except :
+		return {}
 # End
 @app.route('/em/getfirstndataresponsibility/', methods=['GET'])
 @cross_origin()
