@@ -1,4 +1,4 @@
-import os
+import os, json, ast
 import numpy as np
 from ML_algorithms.cluster.EM import em_business as emb
 from ML_algorithms.supporting_module import pickle_module as spr
@@ -29,20 +29,21 @@ if __name__ == '__main__' :
     #res = emb.get_first_n_heterogeneity(55)
     #print(TRAINING_PATH_DIR_EM)
     #assert False
-    # pkl_obj = emb.get_em_object(k, TRAINING_PATH_DIR_EM, seed=SEED)
-    # if pkl_obj is None :
-    #     raise Exception('no pickle object found')
-    # em_obj = pkl_obj.pickled_object
-    img_base64 = data['value']
-    img_name = data['filename']
-    filetype = data['filetype']
-    k = data['k']
-    path = os.path.join(TEMP_FILE_PATH, img_name)
-    path = spr.decode_base64(img_base64, path)
+    k = 4
+    pkl_obj = emb.get_em_object(k, TRAINING_PATH_DIR_EM, seed=SEED)
+    if pkl_obj is None :
+        raise Exception('no pickle object found')
+    em_obj = pkl_obj.pickled_object
+    #img_base64 = data['value']
+    #img_name = data['filename']
+    #iletype = data['filetype']
+    #k = data['k']
+    #path = os.path.join(TEMP_FILE_PATH, img_name)
+    #path = spr.decode_base64(img_base64, path)
 	#print(path)
-    if path is not None :
-	    emobj = get_model(k)
-	    print(emobj.predict_data(img_name, filetype, path, img_base64).T.to_dict())
+    #if path is not None :
+	# emobj = get_model(k)
+	#print(emobj.predict_data(img_name, filetype, path, img_base64).T.to_dict())
     # get first n heteroginity
     #print(em_obj.get_first_n_heterogeneity(55, seed=SEED))
     #data = em_obj._X[-2:]
@@ -54,8 +55,12 @@ if __name__ == '__main__' :
     #print('original')
     #print(em_obj.em_parameters['responsibility'][-2:])
     # first n responsibility
-    #res = em_obj.get_first_n_data_responsibility(5)[0]
-    #print(res[0])
+    res = em_obj.get_first_n_data_responsibility(5, to_json=True)
+    for i in res.keys() :
+        res[i] = ast.literal_eval(res[i])
+    with open('DF_K_4_res.json', 'w+') as f:
+        json.dump(res, f)
+    #print(res) 
     # em paramter
     #print(em_obj.em_parameters)
     # image extension supported
@@ -67,4 +72,4 @@ if __name__ == '__main__' :
     #em_obj.cluster_name = dic
     
     #for index, row in res.iterrows() :
-    #  print(row)
+    #print(row[])

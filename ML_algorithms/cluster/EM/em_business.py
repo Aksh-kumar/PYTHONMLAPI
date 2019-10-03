@@ -254,7 +254,9 @@ class EMBusiness :
             hard_assign = emobj.get_hard_assignment(to_pandas_DF=True)
             df = pd.concat([df, resp, hard_assign], axis=1)
             for i in range(emobj.k) :
-                temp = df[df[self._assign_cluster_col_name] == i].head(n)
+                temp = df[df[self._assign_cluster_col_name] == i]#.head(n)
+                temp = temp.sort_values(by=i, ascending=False)
+                temp = temp.head(n)
                 base64_list = []
                 for row in temp.iterrows() :
                     encd_64 = pkl.encode_base64(row[1]['Path'])

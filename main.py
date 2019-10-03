@@ -124,7 +124,7 @@ def getfirstndataresponsibility() :
 		for i in temp.keys() :
 			temp[i] = ast.literal_eval(temp[i])
 		return  json.loads(json.dumps(temp))
-	except Exception as e:
+	except :
 		return {}
 # End
 @app.route('/em/getfirstnheterogeneity/', methods=['GET'])
