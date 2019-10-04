@@ -58,9 +58,7 @@ if __name__ == '__main__' :
     res = em_obj.get_first_n_data_responsibility(5, to_json=True)
     for i in res.keys() :
         res[i] = ast.literal_eval(res[i])
-    with open('DF_K_4_res.json', 'w+') as f:
-        json.dump(res, f)
-    #print(res) 
+    print(res) 
     # em paramter
     #print(em_obj.em_parameters)
     # image extension supported

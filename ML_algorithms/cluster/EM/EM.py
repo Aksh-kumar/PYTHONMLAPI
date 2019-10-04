@@ -115,7 +115,7 @@ class EM :
         means = init_centroids
         n_cluster = len(init_centroids)
         cov = np.diag(np.var(data, axis=0))
-        covariences = np.array([cov]*n_cluster)
+        covariances = np.array([cov]*n_cluster)
         weights = np.array([1/n_cluster]*n_cluster)
         return means, covariances, weights
     # End

@@ -65,10 +65,8 @@ def getclustername() :
 	try :
 		k = request.args.get('k', type = int)
 		emobj = get_model(k)
-		print(emobj.cluster_name)
-		return json.loads(json.dumps(emobj.cluster_name))
-	except Exception as e :
-		print(str(e))
+		return emobj.cluster_name
+	except :
 		return {}
 # End
 @app.route('/em/setclustername/', methods=['POST'])
@@ -80,11 +78,8 @@ def setclustername() :
 		k = data['k']
 		dic = data['mappedKey']
 		emobj = get_model(k)
-		emobj.cluster_name = dic
-		emb.write_em_pickle(k, TRAINING_PATH_DIR_EM, SEED)
-		del dic_model[k]
-		emobj = get_model(k)
-		return emobj.cluster_name
+		emobj.set_cluster_name(dic)
+		return emobj.set_cluster_name(dic)
 	except :
 		return {}
 # End
@@ -135,7 +130,8 @@ def getfirstnheterogeneity() :
 		n = request.args.get('n', type = int)
 		emobj = get_model(k)
 		return emobj.get_first_n_heterogeneity(n, seed=SEED)
-	except :
+	except Exception as e:
+		print(str(e))
 		return {}
 # End
 @app.route('/em/changek/', methods=['POST'])
@@ -143,8 +139,10 @@ def getfirstnheterogeneity() :
 def changek() :
 	try :
 		k = request.args.get('k')
-		obj = get_model(k)
-		return {res:True}
+		if k in dic_model :
+			del dic_model[k]
+		get_model(k)
+		return jsonify({res:True})
 	except :
 		return {}
 # End

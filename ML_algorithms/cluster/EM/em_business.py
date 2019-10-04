@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import imageio
+import imageio, json
 import os,re, base64, sys
 import pandas as pd
 import numpy as np
@@ -23,25 +23,25 @@ if module import need to do explicitely
 """
 # constant used to store pickle file
 EM_PICKLES_SAVE_SUB_DIR = r'\Pickle_EM' # saved sub directory of pickle file
-
+EM_CLUSTER_NAME_SAVE_SUB_DIR = r'Cluster_Name_EM'
 """ EM business lgic class run EM algorithm from scratch using k-mean as initializer
  expected parameter training images path"""
 class EMBusiness :
-    def __init__(self, path=None) :
+    def __init__(self, kmObj, emObj, path=None, cluster_name_json_file_path=None) :
         self._dataset = None
         self._X = None
         self._k = None
         self._em_params = None
-        self._dic_k_to_name = {}
         self.init_centroids = None
         self.init_cluster_assignment = None
-        self._col_list = ['Image_Name', 'Path', 'Extension', 'R', 'G', 'B' ]
-        self.base64_col_name = 'Image_base64'
-        self._assign_cluster_col_name = 'Assign_Cluster'
+        self._col_list = ['ImageName', 'Path', 'Extension', 'R', 'G', 'B' ]
+        self.base64_col_name = 'ImageBase64'
+        self._assign_cluster_col_name = 'AssignCluster'
         self.df = pd.DataFrame([],columns=self._col_list)
         self.image_EXT = ['.png', '.jpeg', '.jpg', '.jif', '.jpe']
-        self._km = KM.K_Mean()
-        self._em = EM()
+        self._km = kmObj
+        self._em = emObj
+        self.cluster_name_path = cluster_name_json_file_path
         if path is not None :
             self._dataset = self.get_dataset_from_path(path)
             self.get_RGB_numpy_array()
@@ -59,14 +59,22 @@ class EMBusiness :
     # End
     @property
     def cluster_name(self) :
-        return self._dic_k_to_name
+        if self.cluster_name_path is not None and os.path.exists(self.cluster_name_path) :
+            with open(os.path.join(self.cluster_name_path), 'r') as f :
+                return json.load(f)
+        else :
+            return json.loads(json.dumps({x:str(x) for x in range(self.k)}))
     # End
-    @cluster_name.setter
-    def cluster_name(self, value) :
+    def set_cluster_name(self, value) :
         if not (len(value.keys()) == self._k) :
             raise Exception('length must be the same as number of clusters')
         else :
-            self._dic_k_to_name = value
+            try :
+                with open(os.path.join(self.cluster_name_path), 'w') as f :
+                    json.dump(value, f)
+                return json.loads(json.dumps({'res': True}))
+            except  :
+                return json.loads(json.dumps({'res': False}))
     # End
     @property
     def dataset(self) :
@@ -169,20 +177,6 @@ class EMBusiness :
             raise Exception('No data found')
         return self._km.get_initial_k(X, n=n, seed=seed)
     # End
-    """ since cluster assignment produces hard assignment through k mean this fur computational
-     stability we added small amount of reponsibility to not assigned cluster because for EM
-     we have to take inverse of covariance metrix if it become a singular metrix it will not 
-     get inverted"""
-    def _get_stable_responsibilities(self, resp, k=None) :
-        k = k if k is not None else self._k
-        # Inner function
-        def get_soft_assignment_list(ls, n) :
-            temp = np.random.uniform(low=0.1, high=0.16,size =(n,))
-            index_1 = int(np.where(ls==1)[0])
-            sum_ele = temp.sum()
-            return np.insert(temp, index_1, 1-sum_ele)
-        return np.array(list(map(lambda y : get_soft_assignment_list(y, k-1), resp)))
-    # End
     """ expected parameter k- number of cluster and data is numpy array of feature is optional if
      not given then the dataset created through this object  RBG value is getting fetched"""
     def get_initial_centroids_and_cluster_assignment(self, k=None, data=None, seed = None) :
@@ -206,7 +200,6 @@ class EMBusiness :
         elif data is None and self._X is not None :
             # set initial centroids and assignments and hard assignments to clusters by k-means
             self.get_initial_centroids_and_cluster_assignment(seed=seed)
-            # resp = self._get_stable_responsibilities(self.init_cluster_assignment)
             self._em_params = self._em.em(self._X, self.init_centroids , max_iter=maxiter, threshold=thresh)
             return self.em_parameters
         elif data is not None and self._X is None :
@@ -285,24 +278,27 @@ class EMBusiness :
 
 # replace pickle file name non alphabatical character to _
 # get file Name
-get_file_name = lambda k, pth : re.sub('[^0-9a-zA-Z]+', '_', pth) +'_' + str(k) + '.pickle'
+get_file_name = lambda k, pth, ext : re.sub('[^0-9a-zA-Z]+', '_', pth) +'_' + str(k) + ext
 
 # write E pickle
 # parameter k-number of cluster, training path directory path, seed seed to initialize cluster parameter
 # and f_name file name to save as pickle
 def write_em_pickle(k, TRAINING_PATH_DIR, seed, f_name=None) :
-    f_name = f_name if f_name is not None else get_file_name(k, TRAINING_PATH_DIR)
-    em_obj = EMBusiness(TRAINING_PATH_DIR)
+    f_name = f_name if f_name is not None else get_file_name(k, TRAINING_PATH_DIR, '.pickle')
+    kmObj = KM.K_Mean()
+    emObj = EM()
+    f_name_json = get_file_name(k, TRAINING_PATH_DIR, '.json')
+    jsonpath = pkl.get_json_file_path(f_name_json, EM_CLUSTER_NAME_SAVE_SUB_DIR)
+    em_obj = EMBusiness(kmObj, emObj, TRAINING_PATH_DIR, jsonpath)
     em_obj.k = k
     em_obj.get_em_params(seed=seed)
     pkl_obj = pkl.GetPickledObject.get_EM_pickled(TRAINING_PATH_DIR, em_obj, k)
     pkl.write_pickled_object(pkl_obj, EM_PICKLES_SAVE_SUB_DIR, f_name)
     return pkl_obj
 # End
-
 # get EM object
 def get_em_object(k, TRAINING_PATH_DIR, seed = None) :
-    f_name = get_file_name(k, TRAINING_PATH_DIR)
+    f_name = get_file_name(k, TRAINING_PATH_DIR, '.pickle')
     pkl_obj = pkl.read_pickled_object(EM_PICKLES_SAVE_SUB_DIR, f_name)
     if pkl_obj is None :
         pkl_obj = write_em_pickle(k, TRAINING_PATH_DIR, seed, f_name)

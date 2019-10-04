@@ -70,3 +70,7 @@ def decode_base64(val_base64, path) :
         print(str(e))
         return None
 # End
+""" get file path to save json file"""
+def get_json_file_path(filename, sub_dir) :
+    return os.path.join(MODEL_DIR, sub_dir, filename)
+# End
