@@ -73,7 +73,7 @@ class EMBusiness :
                 with open(os.path.join(self.cluster_name_path), 'w') as f :
                     json.dump(value, f)
                 return json.loads(json.dumps({'res': True}))
-            except  :
+            except :
                 return json.loads(json.dumps({'res': False}))
     # End
     @property
