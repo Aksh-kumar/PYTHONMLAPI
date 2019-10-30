@@ -54,8 +54,9 @@ def em_predict() :
 			if path is not None :
 				emobj = get_model(k)
 				result = emobj.predict_data(img_name, filetype, path, img_base64)
-				return result.to_json(orient='records')[0]
-		except :
+				return result.to_json(orient='records')
+		except Exception as e:
+			print(e)
 			pass
 	return {}
 # End
