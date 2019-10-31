@@ -287,7 +287,7 @@ def write_em_pickle(k, TRAINING_PATH_DIR, seed, f_name=None) :
     f_name = f_name if f_name is not None else get_file_name(k, TRAINING_PATH_DIR, '.pickle')
     kmObj = KM.K_Mean()
     emObj = EM()
-    f_name_json = get_file_name(k, TRAINING_PATH_DIR, '.json')
+    f_name_json = f_name.split('.')[0] + '.json' if f_name is not None else get_file_name(k, TRAINING_PATH_DIR, '.json')
     jsonpath = pkl.get_json_file_path(f_name_json, EM_CLUSTER_NAME_SAVE_SUB_DIR)
     em_obj = EMBusiness(kmObj, emObj, TRAINING_PATH_DIR, jsonpath)
     em_obj.k = k
@@ -297,8 +297,8 @@ def write_em_pickle(k, TRAINING_PATH_DIR, seed, f_name=None) :
     return pkl_obj
 # End
 # get EM object
-def get_em_object(k, TRAINING_PATH_DIR, seed = None) :
-    f_name = get_file_name(k, TRAINING_PATH_DIR, '.pickle')
+def get_em_object(k, TRAINING_PATH_DIR, seed = None, saved_model_name=None) :
+    f_name = saved_model_name if saved_model_name is not None else get_file_name(k, TRAINING_PATH_DIR, '.pickle')
     pkl_obj = pkl.read_pickled_object(EM_PICKLES_SAVE_SUB_DIR, f_name)
     if pkl_obj is None :
         pkl_obj = write_em_pickle(k, TRAINING_PATH_DIR, seed, f_name)

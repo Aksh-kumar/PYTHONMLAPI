@@ -12,6 +12,8 @@ SEED = 0
 TRAINING_PATH_DIR_EM = os.path.join(os.getcwd(), r'Data\EM\images')
 CURRENT_DIR = os.getcwd()
 TEMP_FILE_PATH = os.path.join(CURRENT_DIR, r'Temp')
+USED_SAVED_MODEL_FOR_4_CLUSTER = True # make it false if don't want to use saved model
+model_name_4 = 'saved_4_model.pickle' # name of 4 clusterd saved model effective when USED_SAVED_MODEL_FOR_4_CLUSTER = True
 app = Flask(__name__)
 CORS(app)
 # in powershell $env:FLASK_APP = "main"
@@ -26,13 +28,17 @@ def get_model(k) :
 	global dic_model
 	if k in dic_model :
 		return dic_model[k]
-	pklobj = emb.get_em_object(k, TRAINING_PATH_DIR_EM, seed=SEED)
+	if USED_SAVED_MODEL_FOR_4_CLUSTER and k == 4 :
+		pklobj = emb.get_em_object(k, TRAINING_PATH_DIR_EM, seed=SEED, saved_model_name=model_name_4)
+	else :
+		pklobj = emb.get_em_object(k, TRAINING_PATH_DIR_EM, seed=SEED)
 	if pklobj is None :
 		raise Exception('no pickle object found')
 	emobj = pklobj.pickled_object
 	dic_model[k] = emobj
 	return emobj
 # End
+
 @app.route('/')
 @cross_origin()
 def hello() :
@@ -55,8 +61,8 @@ def em_predict() :
 				emobj = get_model(k)
 				result = emobj.predict_data(img_name, filetype, path, img_base64)
 				return result.to_json(orient='records')
-		except Exception as e:
-			print(e)
+		except :
+			#print(e)
 			pass
 	return {}
 # End
@@ -97,6 +103,7 @@ def getclusterparameter() :
 		del param['responsibility']
 		return json.loads(json.dumps(param))
 	except :
+		#print(e)
 		return {}
 # End
 @app.route('/em/getsupportedimagesextension/', methods=['GET'])
@@ -131,8 +138,7 @@ def getfirstnheterogeneity() :
 		n = request.args.get('n', type = int)
 		emobj = get_model(k)
 		return emobj.get_first_n_heterogeneity(n, seed=SEED)
-	except Exception as e:
-		print(str(e))
+	except :
 		return {}
 # End
 @app.route('/em/changek/', methods=['POST'])
@@ -142,13 +148,19 @@ def changek() :
 		k = request.args.get('k')
 		if k in dic_model :
 			del dic_model[k]
-		get_model(k)
-		return jsonify({res:True})
+		emObj = get_model(k)
+		if emObj is None :
+			return jsonify({'res':False})
+		else :
+			#print(emObj.em_parameters)
+			#return emObj.em_parameters
+			return jsonify({'res':True}) 
 	except :
+		#print(e)
 		return {}
 # End
 if __name__ == '__main__':
-	app.run(debug=True)
+	app.run(host='127.0.0.1', port=5000, debug=True, threaded=True)
 else:
     app.config.update(
         #SERVER_NAME='snip.snip.com:80',
