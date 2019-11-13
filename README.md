@@ -1,7 +1,8 @@
 # PYTHONMLAPI
 THis API contain Self Implemented expectation maximization(EM) algorithm in python using flesk framework to make its response available for consume by client side.THis Project structure is:
 
-Folder structure start from base ~(PYTHONAPI)
+### Folder structure start from base ~(PYTHONAPI)
+<pre>
  --->Data (for train data with respected implemented algorithms)
 |     |
 |     | 
@@ -46,5 +47,5 @@ Folder structure start from base ~(PYTHONAPI)
 |
 |
 ------> test.py (Not in use only for testing purpose)
-      
+</pre>
  So this is my folder structure It might grow in future since I have Implemented Just a single algorithm.If you have any question regarding this then please contact me on resakash1498@gmail.com I am happy to answer.
