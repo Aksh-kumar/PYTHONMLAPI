@@ -4,17 +4,14 @@
 import json
 import os
 import re
-#import base64
 import sys
 import imageio
 import pandas as pd
 import numpy as np
-#import pickle as pk
 from ML_algorithms.cluster.Expectation_Maximization.EM import EM
 from ML_algorithms.cluster.K_mean.KM import KM
 from ML_algorithms.supporting_module import pickle_module as pkl
 import ML_algorithms.constants as CONST
-# sys.modules['K_mean'] = KM
 sys.modules['pickle_module'] = pkl
 
 
@@ -510,7 +507,7 @@ class EMBusiness:
 
 
 def get_file_name(k, path, ext):
-    """replace pickle file name non alphabatical character to '_'
+    """replace pickle file name non alphabatical character to '_' and then create hash value it
         
         args :
             path (str) : full path of file

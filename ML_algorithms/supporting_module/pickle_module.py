@@ -31,7 +31,7 @@ class GetPickledObject:
     
     
     @staticmethod
-    def get_EM_pickled(path, obj, k) :
+    def get_EM_pickled(path, obj, k):
         """
             Used to get EMPickledClass object
 

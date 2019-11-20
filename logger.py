@@ -2,6 +2,8 @@
 # coding: utf-8
 
 import os
+import sys
+import traceback as tb
 import datetime as dt
 import application_constant as CONST
 
@@ -36,45 +38,43 @@ class LOGGER:
                 os.mkdir(log_dir_path)
                 return os.path.exists(log_dir_path)
         
-        except NotImplementedError :
-            
+        except NotImplementedError:
             return False
 
 
     @staticmethod
-    def write_log_info(log_path, log_info) :
+    def write_log_info(log_path, exceptionobj) :
         """
             write log detail to file
 
             args :
                 log_path (str) : folder path for log file
-                log_info (str) : log details
+                exceptionobj (object) : Exception object
         """
         
-        filename = 'LOG_{datetime}.txt'.format(datetime=dt.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
+        filename = 'log_{datetime}.txt'.format(datetime=dt.datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
         
         try :
-            
-            with open(os.path.join(log_path, filename), encoding='utf-8', mode='w+') as f : 
-                f.write(log_info)
+            with open(os.path.join(log_path, filename), encoding='utf-8', mode='w') as f : 
+                f.write(''.join(tb.format_tb((exceptionobj.__traceback__))))
         
-        except OSError :
+        except OSError:
             pass
 
 
     @staticmethod
-    def LOG(log_info):
+    def LOG(exceptionobj, trace_back_info=sys.exc_info()):
         """
             log all the exception detail into a file
 
             args :
-                log_info (str) : Exception details
+                exceptionobj (object) : Exception object
         """
         
         try :
             
             if LOGGER.check_log_directory(CONST.LOG_FILES_PATH):
-                LOGGER.write_log_info(CONST.LOG_FILES_PATH, log_info)
+                LOGGER.write_log_info(CONST.LOG_FILES_PATH, exceptionobj)
 
-        except :
+        except Exception:
             pass # If exception raised at last levels

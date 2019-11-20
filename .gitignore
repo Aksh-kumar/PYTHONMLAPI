@@ -1,0 +1,19 @@
+!.gitignore
+
+# Compiled source file #
+###############################
+*.pc
+*.pyc
+*.pyo
+__pycache__
+
+# all log files but not folder #
+#################################
+Logs/*
+!Logs/.gitkeep
+
+# Not ignore Temp folder but ignore files#
+###########################################
+
+Temp/*
+!Temp/.gitkeep

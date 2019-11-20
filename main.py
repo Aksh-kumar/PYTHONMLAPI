@@ -93,7 +93,7 @@ def em_predict() :
 			result = emobj.predict_data(img_name, filetype, path, img_base64)
 			return result.to_json(orient='records')
 	except Exception as e:
-		LOGGER.LOG(str(e)) # log exception
+		LOGGER.LOG(e) # log exception
 		return {}
 
 
@@ -118,7 +118,7 @@ def getclustername() :
 		emobj = get_model(k)
 		return emobj.cluster_name
 	except Exception as e:
-		LOGGER.LOG(str(e)) # Log Exception
+		LOGGER.LOG(e) # Log Exception
 		return {}
 
 
@@ -148,7 +148,7 @@ def setclustername():
 		emobj.set_cluster_name(dic)
 		return emobj.set_cluster_name(dic)
 	except Exception as e:
-		LOGGER.LOG(str(e)) # Log Exception
+		LOGGER.LOG(e) # Log Exception
 		return {}
 
 
@@ -178,7 +178,7 @@ def getclusterparameter():
 		del param['responsibility']
 		return json.loads(json.dumps(param))
 	except Exception as e:
-		LOGGER.LOG(str(e)) # Log Exception
+		LOGGER.LOG(e) # Log Exception
 		return {}
 
 
@@ -204,7 +204,7 @@ def getsupportedimagesextension() :
 		emobj = get_model(k)
 		return jsonify(emobj.IMAGE_EXT_SUPPORTED)
 	except Exception as e:
-		LOGGER.LOG(str(e)) # Log Exception
+		LOGGER.LOG(e) # Log Exception
 		return {}
 
 
@@ -232,12 +232,11 @@ def getfirstndataresponsibility():
 		emobj = get_model(k)
 		temp = emobj.get_first_n_data_responsibility(n, to_json=True)
 		for i in temp.keys() :
-			temp[i] = ast.literal_eval(temp[i])
+			temp[i] = ast.literal_eval(temp[i]) # convert string list to list
 		return  json.loads(json.dumps(temp))
 	except Exception as e:
-		LOGGER.LOG(str(e)) # Log Exception
+		LOGGER.LOG(e) # Log Exception
 		return {}
-
 
 
 @app.route('/em/getfirstnheterogeneity/', methods=['GET'])
@@ -262,9 +261,9 @@ def getfirstnheterogeneity():
 		k = request.args.get('k', type = int)
 		n = request.args.get('n', type = int)
 		emobj = get_model(k)
-		return emobj.get_first_n_heterogeneity(n, seed=SEED)
+		return emobj.get_first_n_heterogeneity(n, seed=CONSTANT.SEED)
 	except Exception as e:
-		LOGGER.LOG(str(e))
+		LOGGER.LOG(e)
 		return {}
 
 
@@ -294,7 +293,7 @@ def changek():
 		else :
 			return jsonify({'res':True}) 
 	except Exception as e:
-		LOGGER.LOG(str(e)) # Log Exception
+		LOGGER.LOG(e) # Log Exception
 		return {}
 
 

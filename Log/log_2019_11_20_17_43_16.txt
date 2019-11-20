@@ -1,0 +1,2 @@
+  File "C:\Users\jkuaka3\Documents\python\API\PYTHONMLAPI\test.py", line 5, in <module>
+    raise Exception('test exception')
