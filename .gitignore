@@ -17,3 +17,16 @@ Logs/*
 
 Temp/*
 !Temp/.gitkeep
+
+# ignore all but not ignore saved model json
+###############################################
+
+ML_algorithms/saved_model/cluster_name_EM/*
+!ML_algorithms/saved_model/cluster_name_EM/saved_4_model.json
+
+# ignore all pickle files but not saved model file
+###################################################
+
+ML_algorithms/saved_model/pickled_EM/*
+!ML_algorithms/saved_model/pickled_EM/saved_4_model.pickle
+
