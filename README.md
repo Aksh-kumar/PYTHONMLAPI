@@ -1,5 +1,5 @@
 # PYTHONMLAPI
-THis API contain Self Implemented expectation maximization(EM) algorithm in python using flesk framework to make its response available for consume by client side. the client side code written in angular 8 available in https://github.com/Aksh-kumar/ML_AlgorithmUI. A pretrained model is already been saved for demo purposes based on data located in ~/Data/EM/images/ to load this model just make 
+THis API contain Self Implemented expectation maximization(EM) algorithm in python using flesk framework to make its response available for consume by client side. the client side code written in angular 8 available in [Client side code](https://github.com/Aksh-kumar/ML_AlgorithmUI). A pretrained model is already been saved for demo purposes based on data located in ~/Data/EM/images/ to load this model just make 
 USED_SAVED_MODEL_FOR_4_CLUSTER to True in application_constant.py file. THis project is fully customize to use. If you have different training data then put that data inside data folder and update TRAINING_PATH_DIR_EM variable in application_constant.py file. ML_algorithms package source code is open intentionally for modification so that it can be used in different project, right now it contain only EM and K-mean algorithm but in future it will grow. This Project structure is:
 
 ## Folder structure start from base ~(PYTHONAPI)
@@ -71,4 +71,5 @@ USED_SAVED_MODEL_FOR_4_CLUSTER to True in application_constant.py file. THis pro
  ### pickle (for save the model)
  ### flask (for REST API communications)
  
+ ## Further help
  If you have any question regarding this then please contact me on resakash1498@gmail.com I am happy to answer.
